@@ -1,0 +1,9 @@
+import {GiEa}
+
+const InitialState = () => {
+  return (
+    <div>InitialState</div>
+  )
+}
+
+export default InitialState

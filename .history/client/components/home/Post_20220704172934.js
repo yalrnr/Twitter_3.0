@@ -1,0 +1,16 @@
+import React from 'react'
+
+const Post = ({
+    displayName,
+    userName,
+    text,
+    avatar,
+    timestamp,
+    
+}) => {
+  return (
+    <div>Post</div>
+  )
+}
+
+export default Post

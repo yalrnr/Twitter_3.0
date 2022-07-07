@@ -1,0 +1,126 @@
+
+/// this page contains the funcitonality of the tweet-box
+
+import { useState } from 'react'
+import { BsCardImage, BsEmojiSmile } from 'react-icons/bs'
+import { RiFileGifLine, RiBarChartHorizontalFill } from 'react-icons/ri'
+import { IoMdCalendar } from 'react-icons/io'
+import { MdOutlineLocationOn } from 'react-icons/md'
+import { client } from '../../lib/client'
+import { useContext } from 'react'
+import { TwitterContext } from '../../context/TwitterContext'
+
+
+//// Styling of the elements using the tailwind css
+const style = {
+    wrapper: `px-4 flex flex-row border-b border-[#38444d] pb-4`,
+    tweetBoxLeft: `mr-4`,
+    tweetBoxRight: `flex-1`,
+    profileImage: `height-12 w-12 rounded-full`,
+    inputField: `w-full h-full outline-none bg-transparent text-lg`,
+    formLowerContainer: `flex`,
+    iconsContainer: `text-[#1d9bf0] flex flex-1 items-center`,
+    icon: `mr-2`,
+    submitGeneral: `px-6 py-2 rounded-3xl font-bold`,
+    inactiveSubmit: `bg-[#196195] text-[#95999e]`,
+    activeSubmit: `bg-[#1d9bf0] text-white`,
+  }
+
+  /// Main function for tweetbox
+const TweetBox = () => {
+    const [tweetMessage,setTweetMessage] = useState('')
+    const {currentAccount,currentUser,tweets} = useContext(TwitterContext)
+    
+    // upon clicking tweet button, run this function
+    const postTweet = async (event) => {
+        event.preventDefault()
+        if(!tweetMessage) return
+
+        // set an id for the tweet
+        const tweetId = `${currentAccount}_${Date.now()}`
+
+        /// Store the data about the tweet
+        const tweetDoc = {
+            _type: 'tweets',
+            _id: tweetId,
+            tweet: tweetMessage,
+            timestamp: new Date(Date.now()).toISOString(),
+            author:{
+                _key: tweetId,
+                _type: 'reference',
+                _ref: currentAccount,
+            },
+        }
+
+        //// Store the data to the sanity if its not there
+        await client.createIfNotExists(tweetDoc)
+
+        /// adding the details
+        await client
+        .patch(currentAccount)
+        .setIfMissing({ tweets: [] })
+        .insert('after','tweets[-1]',[
+            {
+                _key: tweetId,
+                _type:'reference',
+                _ref: tweetId,
+            },
+        ])
+        .commit()
+        setTweetMessage('')
+    }
+
+    //// displaying the TweetBox
+  return (
+    <div className={style.wrapper}>
+
+    {/* display the profile image of the current user */}
+        <div className={style.tweetBoxLeft}>
+            <img 
+            src={currentUser.profileImage} 
+            alt="Profile Image" 
+            className={currentUser.isProfileImageNft ? `${style.profileImage} smallHex`:style.profileImage} 
+            />
+        </div>
+
+   {/* main tweet box */}
+        
+        <div className={style.tweetBoxRight}>
+            {/* display it as a form */}
+            <form>
+
+                {/* Main area of the tweetbox and  */}
+                <textarea 
+                className={style.inputField}
+                placeholder="What's on your mind? Tweet it!"
+                value={tweetMessage}
+                onChange={(e) =>setTweetMessage(e.target.value)}
+                />
+
+                {/*  */}
+                <div className={style.formLowerContainer}>
+                    <div className={style.iconsContainer}>
+                    <BsCardImage className={style.icon} />
+                    <RiFileGifLine className={style.icon} />
+                    <RiBarChartHorizontalFill className={style.icon} />
+                    <BsEmojiSmile className={style.icon} />
+                    <IoMdCalendar className={style.icon} />
+                    <MdOutlineLocationOn className={style.icon} />
+                    </div>
+                    <button 
+                    type="submit" 
+                    onClick={event => postTweet(event)}
+                    className={`${style.submitGeneral} ${
+                        tweetMessage ? style.activeSubmit : style.inactiveSubmit
+                      }`}
+                    >
+                        Tweet
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+  )
+}
+
+export default TweetBox
